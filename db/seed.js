@@ -1,19 +1,19 @@
-//grab our client with destructuring from the export in index.js
-const { create } = require('domain');
 const { 
     client,
     getAllUsers,
-    createUser
+    createUser,
+    updateUser
 } = require('./index');
 
 async function createInitialUsers() {
     try {
         console.log("Starting to create users...");
 
-        const albert = await createUser({username: 'albert', password: 'bertie99' });
-        const albertTwo = await createUser({username: 'sandra', password: 'glamgal' });
+        await createUser({username: 'albert', password: 'bertie99', name: 'al', location: 'daytona' });
+        await createUser({username: 'sandra', password: '2sandy4me', name: 'sandy', location: 'jax'});
+        await createUser({username: 'glamgal', password: 'soglam', name: 'gal', location: 'staug'})
 
-        console.log(albert);
+
 
         console.log("Finished creating users!");
     } catch(error) {
@@ -45,7 +45,10 @@ async function createTables() {
             CREATE TABLE users (
                 id SERIAL PRIMARY KEY,
                 username varchar(255) UNIQUE NOT NULL,
-                password varchar(255) NOT NULL
+                password varchar(255) NOT NULL,
+                name varchar(255) NOT NULL,
+                location varchar(255) NOT NULL,
+                active BOOLEAN DEFAULT true
             );
         `);
 
@@ -54,6 +57,22 @@ async function createTables() {
         console.error("Error building tables!");
         throw error; // we pass the error up to the function that calls createTables
     } 
+}
+
+async function createPostsTable() {
+    try {
+        console.log("Starting to build posts table...")
+
+        await client.query(`
+            CREATE TABLE posts (
+                id SERIAL PRIMARY KEY
+                "authorId" INTEGER REFERENCES users(id) NOT NULL
+                title varchar(255) NOT NULL
+                content TEXT NOT NULL   
+            )        
+        `
+        )
+    }
 }
 
 async function rebuildDB() {
@@ -72,8 +91,16 @@ async function testDB() {
     try {
         console.log("Starting to test database...");
 
+        console.log("Calling getAllUsers")
         const users = await getAllUsers();
-        console.log("getAllUsers:", users);
+        console.log("Result:", users);
+
+        console.log("calling updateUser on users[0]")
+        const updateUserResult = await updateUser(users[0].id, {
+            name: "Newname Sogood",
+            location: "Lesterville, KY"
+        });
+        console.log("Result:", updateUserResult);
 
         console.log("Finished database tests!");
     } catch (error) {
