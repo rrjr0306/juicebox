@@ -1,8 +1,13 @@
 const { 
     client,
     getAllUsers,
+    getAllPosts,
+    getPostsByUser,
     createUser,
-    updateUser
+    updateUser,
+    createPost,
+    updatePost,
+    getUserById
 } = require('./index');
 
 async function createInitialUsers() {
@@ -22,11 +27,42 @@ async function createInitialUsers() {
     }
 }
 
+async function createInitialPosts() {
+    try {
+        const [albert, sandra, glamgal] = await getAllUsers();
+
+        console.log('starting to create posts...');
+        await createPost({
+            authorId: albert.id,
+            title: "First Post",
+            content: "This is my first post, Blah Blah Blah"
+        });
+
+        await createPost({
+            authorId: sandra.id,
+            title: "what am i doing here",
+            content: "what the ..."
+        });
+
+        await createPost({
+            authorId: glamgal.id,
+            title: "my username",
+            content: "what kind of username did i give myself!?"
+        });
+        
+        console.log('finished creating posts!')
+    } catch (error) {
+        console.log('Error creating posts!');
+        throw error
+    }
+}
+
 async function dropTables() {
     try {
         console.log("Starting to drop tables...");
 
         await client.query(`
+            DROP TABLE IF EXISTS posts;
             DROP TABLE IF EXISTS users;
         `);
         
@@ -50,6 +86,21 @@ async function createTables() {
                 location varchar(255) NOT NULL,
                 active BOOLEAN DEFAULT true
             );
+            CREATE TABLE posts (
+                id SERIAL PRIMARY KEY,
+                "authorId" INTEGER REFERENCES users(id),
+                title varchar(255) NOT NULL,
+                content TEXT NOT NULL,
+                active BOOLEAN DEFAULT true
+              );
+            CREATE TABLE tags (
+                id SERIAL PRIMARY KEY,
+                name varchar(255) NOT NULL
+            );            
+            CREATE TABLE post_tags (
+                "postId" INTEGER REFERENCES posts(id) UNIQUE
+                "tagId" INTEGER REFERENCES tags(id) UNIQUE
+             );      
         `);
 
         console.log("Finished building tables!");
@@ -59,21 +110,6 @@ async function createTables() {
     } 
 }
 
-async function createPostsTable() {
-    try {
-        console.log("Starting to build posts table...")
-
-        await client.query(`
-            CREATE TABLE posts (
-                id SERIAL PRIMARY KEY
-                "authorId" INTEGER REFERENCES users(id) NOT NULL
-                title varchar(255) NOT NULL
-                content TEXT NOT NULL   
-            )        
-        `
-        )
-    }
-}
 
 async function rebuildDB() {
     try {
@@ -82,6 +118,7 @@ async function rebuildDB() {
         await dropTables();
         await createTables();
         await createInitialUsers();
+        await createInitialPosts();
     } catch (error) {
         throw error;
     } 
@@ -91,7 +128,15 @@ async function testDB() {
     try {
         console.log("Starting to test database...");
 
-        console.log("Calling getAllUsers")
+        // console.log("creating initial posts");
+        // const initialPosts = await createInitialPosts();
+        // console.log('Result:', initialPosts);
+
+        // console.log('creating posts table');
+        // const postsTable = await createPostsTable();
+        // console.log('Result', postsTable);
+
+        console.log("Calling getAllUsers");
         const users = await getAllUsers();
         console.log("Result:", users);
 
@@ -102,9 +147,25 @@ async function testDB() {
         });
         console.log("Result:", updateUserResult);
 
+        console.log("Calling getAllPosts");
+        const posts = await getAllPosts();
+        console.log("Result:", posts);
+    
+        console.log("Calling updatePost on posts[0]");
+        const updatePostResult = await updatePost(posts[0].id, {
+          title: "New Title",
+          content: "Updated Content"
+        });
+        console.log("Result:", updatePostResult);
+    
+        console.log("Calling getUserById with 1");
+        const albert = await getUserById(1);
+        console.log("Result:", albert);
+
+
         console.log("Finished database tests!");
     } catch (error) {
-        console.error("Error testing databse!");
+        console.error("Error testing database!");
         throw error;
     }
 }
