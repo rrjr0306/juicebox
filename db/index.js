@@ -123,7 +123,6 @@ async function updatePost(postId, fields = {}) {
 }
 
 async function getPostsByUser(userId) {
-  console.log("testing getPostsByUser");
   try {
     const { rows: postIds } = await client.query(`
             SELECT id
@@ -142,7 +141,6 @@ async function getPostsByUser(userId) {
 }
 
 async function getUserById(userId) {
-  console.log("testing getUserById");
   try {
     const {
       rows: [user],
@@ -157,6 +155,20 @@ async function getUserById(userId) {
     }
 
     user.posts = await getPostsByUser(userId);
+
+    return user;
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function getUserByUsername(username) {
+  try {
+    const { rows: [user] } = await client.query(`
+      SELECT *
+      FROM users
+      WHERE username=$1;
+    `, [username]);
 
     return user;
   } catch (error) {
@@ -359,5 +371,6 @@ module.exports = {
   addTagsToPost,
   getPostById,
   getPostsByTagName,
-  getAllTags
+  getAllTags,
+  getUserByUsername
 };
