@@ -1,7 +1,11 @@
 const { Client } = require("pg"); //imprts the pg module
+const { DATABASE_URL = 'postgres://localhost:5432/juicebox-dev' } = process.env;
 
 //supply db name and location of the database
-const client = new Client("postgres://localhost:5432/juicebox-dev");
+const client = new Client({
+  connectionString: DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+});
 
 async function createUser({ username, password, name, location }) {
   try {
@@ -255,6 +259,13 @@ async function getPostById(postId) {
       `,
       [postId]
     );
+
+    if (!post) {
+      throw {
+        name: "PostNotFoundError",
+        message: "Could not find a post with that postId"
+      };
+    }
 
     const { rows: tags } = await client.query(
       `
