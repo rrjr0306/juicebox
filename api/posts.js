@@ -6,7 +6,6 @@ const tagsRouter = require('./tags');
 const { requireUser } = require('./utils');
 
 postsRouter.post('/', requireUser, async (req, res, next) => {
-    
     const { title, content, tags = "" } = req.body;
     
     const data = req.user
@@ -40,7 +39,7 @@ postsRouter.post('/', requireUser, async (req, res, next) => {
 postsRouter.patch('/:postId', requireUser, async (req, res, next) => {
     const { postId } = req.params;
     const { title, content, tags } = req.body;
-
+    console.log("DSK;FJAHALKJDSHFKALJHS", req.user)
     const updateFields = {};
 
     if (tags && tags.length > 0) {
